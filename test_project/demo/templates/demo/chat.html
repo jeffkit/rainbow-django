@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+
+<html>
+<head>
+    <title>Group Chat Demo (Power By Rainbow)</title>
+    <script type="text/javascript" src="http://upcdn.b0.upaiyun.com/libs/jquery/jquery-2.0.3.min.js">
+</script>
+    <script type="text/javascript" src="https://coding.net/u/jeff/p/rainbow-js/git/raw/master/dist/rainbow.js">
+</script>
+    <script type="text/javascript">
+    var username = '';
+    var identity = '';
+  $(document).ready(function(){
+      var host = "ws://localhost:1984/connect/";
+      var rainbow = new Rainbow(host);
+
+      rainbow
+        .on("open", function () {
+          console.log("open");
+          
+		  $('#console').append("<p>System: Hey, you have connect to the server, just give yourself a name, and start to chat!</p>");
+        })
+      .on("message", function (msgType, data) {
+          Rainbow.blob2obj( data, function (obj) {
+          	if (msgType == 1001){
+	            $('#console').append("<p>" + obj["name"] + " enter this room, welcom! !</p>");
+	        }
+	        if (msgType == 1002){
+	        	var cls = 'others';
+	        	if (identity == obj['identity'])
+	        		cls = 'mine';
+	        	$('#console').append("<p>" + obj["name"] + ":" + obj["message"] + "</p>")
+	        }
+	        $('#console').scrollTop($('#console')[0].scrollHeight);
+          });
+        })
+      .on("close", function (err) {
+        err && console.log("Close with error: " + err.message);
+      })
+      .on("error", function (err) {
+        console.log(err);
+      });
+
+      rainbow.open();
+      
+      $("#form").submit(function(){ 
+	      var action = this.action.value;
+	      var msg_type = 0;
+	      if (username != ''){
+		      msg_type = 1;
+	      }
+	      message = this.message.value
+	      this.message.value = '';
+	      rainbow.send(msg_type, {"message":message}, 2, 10000)
+	    	.on("success", function(res){
+	    		Rainbow.blob2obj(res, function(obj){
+	    			if (msg_type == 0){
+		    			username = message;
+						identity = obj['identity']
+						$("#tip").text("just say some thing:");
+					}else{
+						
+					}
+	    		});
+		    	
+	      	})
+		     .on("fail", function(){
+
+		    });
+	      return false;
+      });
+      
+      });
+      
+      
+    </script>
+    <style type="text/css" media="screen">
+  .div-height{
+        border:1px solid #F00; 
+        width:100%; 
+        max-height:200px; 
+        min-height:200px;
+        overflow: scroll;
+        margin: 10;
+      }
+  .mine{
+	  float: right;
+  }
+    </style>
+</head>
+
+<body>
+    <h2>Rainbow Group Chat Demo</h2>
+
+    <div id="content">
+        <div id="console" class="div-height"></div><br>
+
+        <form method="post" id="form" action="#">
+            <div id="form" style="float:right;">
+                <p id="tip">hey, what's your name?</p><input type="text" name="message" size="50" value=""/>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
